@@ -1,0 +1,31 @@
+plugins {
+    id 'org.hidetake.ssh'
+}
+
+dependencies {
+    api project(":shared")
+}
+
+remotes {
+    host {
+        host = System.getenv("PLU_PUSH_HOST")
+        port = System.getenv("PLU_PUSH_PORT").toInteger()
+        user = System.getenv("PLU_PUSH_USER")
+        agent = true
+    }
+}
+
+task upload {
+    dependsOn build
+    doLast {
+        ssh.run {
+            session(remotes.host) {
+                put from: "$buildDir/libs/${rootProject.name}-${rootProject.version}.jar", into: "$p"
+            }
+        }
+    }
+}
+
+jar.archiveName("${rootProject.name}-${rootProject.version}-standalone.jar")
+jar.from{configurations.runtimeClasspath.collect {it.isDirectory() ? it : zipTree(it)}}
+jar.manifest{attributes("Main-Class": "pluginloader.internal.standalone.StartKt")}

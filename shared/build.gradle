@@ -1,0 +1,6 @@
+dependencies {
+    api project(":api")
+    api "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinSerializationVersion"
+    api "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerializationVersion"
+    //api 'org.ow2.asm:asm:9.0'
+}

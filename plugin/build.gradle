@@ -1,0 +1,47 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+dependencies {
+    api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    api "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinSerializationVersion"
+    api gradleApi()
+}
+
+gradlePlugin {
+    plugins {
+        api {
+            id = 'pluginloader.api'
+            implementationClass = 'pluginloader.gradle.ApiPlugin'
+        }
+        paper{
+            id = 'pluginloader.paper'
+            implementationClass = 'pluginloader.gradle.PaperPlugin'
+        }
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            url System.getenv("PLU_NEXUS_URL")
+
+            credentials {
+                username System.getenv("PLU_NEXUS_PUSH_USER")
+                password System.getenv("PLU_NEXUS_PUSH_PASSWORD")
+            }
+        }
+    }
+}
