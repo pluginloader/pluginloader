@@ -36,11 +36,11 @@ publishing {
 
     repositories {
         maven {
-            url System.getenv("PLU_NEXUS_URL")
+            url System.getenv("PLU_PUBLIC_URL")
 
             credentials {
-                username System.getenv("PLU_NEXUS_PUSH_USER")
-                password System.getenv("PLU_NEXUS_PUSH_PASSWORD")
+                username System.getenv("PLU_PUBLIC_PUSH_USER")
+                password System.getenv("PLU_PUBLIC_PUSH_PASSWORD")
             }
         }
     }
