@@ -34,21 +34,14 @@ fun main() {
             configFile.createNewFile()
             configFile.writeText(json.encodeToString(Config.serializer(), config))
         }
-        val remove = ArrayList<String>()
+        controller.cache = config.cache
+        controller.mavenCache = config.mavenCache
         config.plugins.forEach{ name ->
             if(controller.exists(name))return@forEach
-            val jar = getFile(name)
-            if(jar == null){
-                remove.add(name)
-                return@forEach
-            }
+            val jar = getFile(name) ?: return@forEach
             caching {
                 controller.load(jar)
             }.nonNull(Throwable::printStackTrace)
-        }
-        if(remove.isNotEmpty()){
-            config.plugins.removeAll(remove)
-            saveConfig()
         }
     }
     caching{System.`in`.bufferedReader().use {
@@ -60,7 +53,7 @@ fun main() {
                 when (args[0].toLowerCase()) {
                     "plu", "pluginloader" -> {
                         if (args.size == 1) {
-                            println("Usage: pluginloader [load|unload|show|repo|repos]")
+                            println("Usage: pluginloader [load|unload|show|reloadcfg]")
                             return@inMain
                         }
                         when (args[1].toLowerCase()) {
@@ -104,22 +97,10 @@ fun main() {
                                     }")
                                 }
                             }
-                            "t", "r", "repo", "toggle" -> {
-                                if(args.size == 2){
-                                    println("Usage: pluginloader repo [Repo]")
-                                    return@inMain
-                                }
-                                val repo = args[2]
-                                if(config.pluginDirs.remove(repo)){
-                                    println("Repo '$repo' removed")
-                                }else{
-                                    config.pluginDirs.add(repo)
-                                    println("Repo '$repo' added")
-                                }
-                                saveConfig()
-                            }
-                            "repos" -> {
-                                println("All repos: ${config.pluginDirs.joinToString(", ")}")
+                            "r", "reloadcfg" -> {
+                                config = json.decodeFromString(Config.serializer(), configFile.readText())
+                                controller.cache = config.cache
+                                controller.mavenCache = config.mavenCache
                             }
                         }
                     }
@@ -154,4 +135,9 @@ class Plugin(name: String): InternalPlugin(controller, name){
 }
 
 @Serializable
-private data class Config(val pluginDirs: MutableList<String> = arrayListOf("plugins"), val plugins: MutableList<String> = ArrayList())
+private data class Config(
+    val pluginDirs: MutableList<String> = arrayListOf("plugins"),
+    val plugins: MutableList<String> = ArrayList(),
+    val cache: String = "plu_cache",
+    val mavenCache: String = "plu_cache/maven"
+)

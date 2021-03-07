@@ -5,10 +5,10 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.scheduler.BukkitTask
 
 interface Plugin: LoaderPlugin {
-    @Deprecated("Use pluginloader:configs:...")
+    @Deprecated("Use plugin configs:1.0.0")
     val config: ConfigurationSection
 
-    @Deprecated("Use pluginloader:configs:...")
+    @Deprecated("Use plugin configs:1.0.0")
     fun saveConfig()
 
     fun registerCommand(name: String, callback: (Sender, Args) -> Unit, checkOp: Boolean = false, vararg aliases: String)

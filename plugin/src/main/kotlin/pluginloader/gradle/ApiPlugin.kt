@@ -5,13 +5,21 @@ import org.gradle.api.Project
 
 open class Config(private val project: Project){
     fun plu(vararg plugins: String){
-        plugins.forEach{project.dependencies.add("dependency", "pluginloader:$it")}
+        plugins.forEach{project.dependencies.add("dependency", "pluginloader:${
+            if(!it.contains(':')) "$it:1.0.0" else it
+        }")}
+    }
+
+    fun lib(vararg plugins: String){
+        plugins.forEach{project.dependencies.add("compileOnly", "pluginloader:${if(!it.contains(':')) "$it:1.0.0" else it}")}
     }
 }
 
 class ApiPlugin: Plugin<Project> {
     override fun apply(project: Project) {
         project.tasks.getByPath("jar").doFirst{_ ->
+            val dir = project.file("build/classes/kotlin/main/pluginloader")
+            if(dir.exists())dir.deleteRecursively()
             project.configurations.getByName("dependency").allDependencies.forEach{
                 val f = project.file("build/classes/kotlin/main/pluginloader/${it.name}.dependency")
                 f.parentFile.mkdirs()

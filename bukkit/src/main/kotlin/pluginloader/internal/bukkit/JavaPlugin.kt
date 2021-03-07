@@ -5,6 +5,7 @@ import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.java.JavaPlugin
 import pluginloader.api.onlinePlayers
 import pluginloader.api.plugin
+import pluginloader.api.string
 import pluginloader.internal.bukkit.nms.v1_12_R1.check_1_12_R1
 import pluginloader.internal.bukkit.nms.v1_16_R2.check_1_16_R2
 import pluginloader.internal.shared.PluginController
@@ -36,6 +37,8 @@ class JavaPlugin: JavaPlugin(){
             if (!pluginsDir.exists()) pluginsDir.mkdir()
             if (configFile2.exists()) config.load(configFile2)
             else defaultConfig()
+            controller.cache = config.string("cache", controller.cache)
+            controller.mavenCache = config.string("mavenCache", controller.mavenCache)
             repos.addAll(config.getStringList("repos"))
             config.getStringList("plugins").forEach(this::loadFromRepos)
             config.save(configFile2)
@@ -50,6 +53,8 @@ class JavaPlugin: JavaPlugin(){
     }
 
     private fun saveCfg(){
+        config["cache"] = controller.cache
+        config["mavenCache"] = controller.mavenCache
         config["repos"] = repos
         config["plugins"] = pluginsList
         config.save(configFile2)
@@ -57,6 +62,8 @@ class JavaPlugin: JavaPlugin(){
 
     private fun defaultConfig(){
         if(!configFile2.exists()) Files.createFile(configFile2.toPath())
+        config["cache"] = controller.cache
+        config["mavenCache"] = controller.mavenCache
         config["repos"] = listOf("plugins/plugins")
         config["plugins"] = listOf("example")
         config.save(configFile2)
@@ -106,10 +113,12 @@ class JavaPlugin: JavaPlugin(){
         return pre
     }
 
-    fun toggleRepo(repo: String): Boolean{
-        if(repos.remove(repo))return true
-        else repos.add(repo)
-        saveCfg()
-        return false
+    fun reload(){
+        config.load(configFile2)
+        repos.clear()
+        repos.addAll(config.getStringList("repos"))
+        config.getStringList("plugins").filterNot(pluginsList::contains).forEach(this::loadFromRepos)
+        controller.cache = config.string("cache", controller.cache)
+        controller.mavenCache = config.string("mavenCache", controller.mavenCache)
     }
 }

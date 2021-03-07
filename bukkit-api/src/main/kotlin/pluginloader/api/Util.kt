@@ -57,6 +57,7 @@ open class V3(open val x: Double, open val y: Double, open val z: Double){
     open val block: V3 get() = V3(blockX.toDouble(), blockY.toDouble(), blockZ.toDouble())
 
     open fun location(world: World): Location = Location(world, x, y, z)
+
     fun location(world: String): Location? {
         return location(Bukkit.getWorld(world) ?: return null)
     }

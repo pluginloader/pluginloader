@@ -21,18 +21,18 @@ abstract class InternalPlugin(val controller: PluginController, override val nam
 
     open fun startLoad(){}
 
-    open fun unload(){
-        unloadHandlers.forEach{
-            try{
+    open fun unload() {
+        unloadHandlers.forEach {
+            try {
                 it()
-            }catch (ex: Throwable){
+            } catch (ex: Throwable) {
                 ex.printStackTrace()
             }
         }
         unloadHandlers.clear()
     }
 
-    fun mayExceptionLoad(kClass: KClass<*>): Throwable?{
+    fun mayExceptionLoad(kClass: KClass<*>): Throwable? {
         return caching {
             val java = kClass.java
             java.declaredFields.forEach fields@{
@@ -52,12 +52,15 @@ abstract class InternalPlugin(val controller: PluginController, override val nam
         }
     }
 
-    override fun load(kClass: KClass<*>){
-        mayExceptionLoad(kClass).nonNull{it.printStackTrace()}
+    override fun load(kClass: KClass<*>) {
+        mayExceptionLoad(kClass).nonNull { it.printStackTrace() }
     }
 
-    override fun <T : Annotation, Obj> fieldReplacer(kClass: KClass<T>, handler: (LoaderPlugin, T, Obj) -> Obj) {
-        fieldHandler(kClass){field, annotation, plugin ->
+    override fun <T: Annotation, Obj> fieldReplacer(
+        kClass: KClass<T>,
+        handler: (plugin: LoaderPlugin, annotation: T, input: Obj) -> Obj
+    ) {
+        fieldHandler(kClass) { field, annotation, plugin ->
             field.unsetFinal()
             val result = field.get(null) as Obj
             @Suppress("UNCHECKED_CAST")
@@ -67,11 +70,11 @@ abstract class InternalPlugin(val controller: PluginController, override val nam
 
     override fun <T : Annotation> fieldHandler(kClass: KClass<T>, handler: (Field, T, LoaderPlugin) -> Unit) {
         controller.fieldHandler(kClass, handler)
-        unloadHandler{controller.unregisterFieldHandler(kClass)}
+        unloadHandler { controller.unregisterFieldHandler(kClass) }
     }
 
     override fun <T : Annotation> methodHandler(kClass: KClass<T>, handler: (Method, T, LoaderPlugin) -> Unit) {
         controller.methodHandler(kClass, handler)
-        unloadHandler{controller.unregisterMethodHandler(kClass)}
+        unloadHandler { controller.unregisterMethodHandler(kClass) }
     }
 }

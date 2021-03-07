@@ -30,9 +30,8 @@ inline class NBT private constructor(private val nbt: Any){
         fun setInt(item: ItemStack, key: String, value: Int) = write(item).setInt(key, value)
         fun setDouble(item: ItemStack, key: String, value: Double) = write(item).setDouble(key, value)
 
-        @Deprecated("do not use this lol")
+        @Deprecated("do not use this lol", level = DeprecationLevel.HIDDEN)
         fun fromJson(json: JsonObject) = AbstractNBT.provider.fromJson(json)
-
         fun fromJsonNBT(json: JsonObject): NBT = NBT(AbstractNBT.provider.fromJson(json))
     }
 

@@ -21,8 +21,8 @@ object UUIDSerializer: KSerializer<UUID> {
 
     override fun deserialize(decoder: Decoder): UUID =
         decoder.decodeStructure(descriptor) {
-            var most = 0L
             var least = 0L
+            var most = 0L
             while (true) {
                 when (val index = decodeElementIndex(descriptor)) {
                     0 -> least = decodeLongElement(descriptor, 0)
@@ -34,3 +34,13 @@ object UUIDSerializer: KSerializer<UUID> {
             UUID(most, least)
         }
 }
+
+/*
+object UUIDStringSerializer: KSerializer<UUID> {
+    override val descriptor: SerialDescriptor = String.serializer().descriptor
+
+    override fun deserialize(decoder: Decoder): UUID = UUID.fromString(decoder.decodeString())
+
+    override fun serialize(encoder: Encoder, value: UUID) = encoder.encodeString(value.toString())
+}
+*/

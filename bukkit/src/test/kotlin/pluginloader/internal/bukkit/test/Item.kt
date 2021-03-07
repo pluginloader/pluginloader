@@ -1,4 +1,4 @@
-package pluginloader.api
+package pluginloader.internal.bukkit.test
 
 import com.charleskorn.kaml.Yaml
 import kotlinx.serialization.*
@@ -6,23 +6,27 @@ import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.junit.Test
-import java.util.*
+import pluginloader.api.Item
+import pluginloader.internal.bukkit.nms.v1_12_R1.check_1_12_R1
 
-@InternalSerializationApi
-class Serializers {
-    private val debug = false
+class Serialization{
+    private val debug = true
 
     @ExperimentalSerializationApi
-    @Suppress("UNCHECKED_CAST")
+    @InternalSerializationApi
     @Test
-    fun uuid(){
-        test(UUID.randomUUID(), UUIDSerializer as KSerializer<Any>)
+    fun item(){
+        check_1_12_R1()
+        val item = Item.default()
+        item["lol"] = "lol"
+        test(item)
     }
 
     @ExperimentalSerializationApi
-    fun test(test: Any, s: KSerializer<Any>?){
+    @InternalSerializationApi
+    fun test(test: Any){
         @Suppress("UNCHECKED_CAST")
-        val serializer = s ?: test::class.serializer() as KSerializer<Any>
+        val serializer = test::class.serializer() as KSerializer<Any>
         var encoded = Json.encodeToString(serializer, test)
         var decoded = Json.decodeFromString(serializer, encoded)
         if(debug) println("[Json] Source: '$test', encoded: '$encoded', decoded '$decoded'")
@@ -37,7 +41,7 @@ class Serializers {
         assert(test == decoded)
         encoded = Yaml.default.encodeToString(serializer, test)
         decoded = Yaml.default.decodeFromString(serializer, encoded)
-        if(debug) println("[ProtoBuf] Source: '$test', encoded: '$encoded', decoded '$decoded'")
+        if(debug) println("[Yaml] Source: '$test', encoded: '$encoded', decoded '$decoded'")
         assert(test == decoded)
     }
 }

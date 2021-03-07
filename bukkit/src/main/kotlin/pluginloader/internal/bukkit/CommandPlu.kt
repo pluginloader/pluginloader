@@ -8,7 +8,7 @@ internal class CommandPlu(private val plugin: JavaPlugin): Command("pluginloader
         @Suppress("UNCHECKED_CAST")
         if(!sender.isOp)return true
         if(args.isEmpty()){
-            sender.sendMessage("§6Usage: /pluginloader [Load|Unload|Toggle|Show]")
+            sender.sendMessage("§6Usage: /pluginloader [Load|Unload|ReloadCfg|Show]")
             return true
         }
         val name = if(args.size == 1) "" else args[1]
@@ -28,12 +28,9 @@ internal class CommandPlu(private val plugin: JavaPlugin): Command("pluginloader
                     sender.sendMessage("§cNot ok, $name not found")
                 }
             }
-            "toggle", "t" -> {
-                if(plugin.toggleRepo(name)){
-                    sender.sendMessage("§6Repo $name removed")
-                }else{
-                    sender.sendMessage("§6Repo $name added")
-                }
+            "reloadcfg", "r" -> {
+                plugin.reload()
+                sender.sendMessage("§6Reloaded config.yml")
             }
             "show", "s" -> {
                 if(args.size >= 2){

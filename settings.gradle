@@ -1,7 +1,0 @@
-rootProject.name = 'pluginloader'
-include 'api'
-include 'shared'
-include 'bukkit-api'
-include 'bukkit'
-include 'standalone'
-include 'plugin'

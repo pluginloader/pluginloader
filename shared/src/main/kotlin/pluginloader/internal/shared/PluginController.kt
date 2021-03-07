@@ -16,10 +16,11 @@ class PluginController(private val loadDependency: (String) -> Unit,
                            System.err.println("Plugin ${plugin.name} exception:")
                            ex.printStackTrace()
                        }){
+    var mavenCache = "plu_cache/maven"
+    var cache = "plu_cache"
     private val fields = HashMap<KClass<out Any>, (Field, Annotation, LoaderPlugin) -> Unit>()
     private val methods = HashMap<KClass<out Any>, (Method, Annotation, LoaderPlugin) -> Unit>()
     private val jarPlugins = HashMap<String, JarPlugin>()
-    private val mavenCacheDir = "cache"
 
     init{
         methodHandler(Load::class){ method, _, pl ->
@@ -57,8 +58,8 @@ class PluginController(private val loadDependency: (String) -> Unit,
             jarPlugins.forEach{ fallback(it.key, it.value.dependency) }
 
     fun load(jar: File, plName: String = jar.name.replace(".jar", ""), dep: List<String> = emptyList()){
-        val loadedPlugin = createPlugin(this, plName, jar)
         if(exists(plName))return
+        val loadedPlugin = createPlugin(this, plName, jar)
         val loading = JarPlugin(rtn@{ name, dependency ->
             jarPlugins.forEach {
                 if (dependency.contains(it.key)) {
@@ -87,12 +88,12 @@ class PluginController(private val loadDependency: (String) -> Unit,
 
     fun loadMaven(group: String, artifact: String, version: String){
         if(exists(artifact))return
-        Maven.central.download(mavenCacheDir, group, artifact, version)
-        val depFile = File(mavenCacheDir, "${group.replace(".", "/")}/$artifact/$version-dependency.json")
+        Maven.download(Maven.central, mavenCache, group, artifact, version)
+        val depFile = File(mavenCache, "${group.replace(".", "/")}/$artifact/$version-dependency.json")
         if(!depFile.exists())return
         val dependency = Json.decodeFromString(ListSerializer(MavenArtifactDependency.serializer()), depFile.readText())
         dependency.forEach{loadMaven(it.group, it.artifact, it.version)}
-        load(File(mavenCacheDir, "${group.replace(".", "/")}/$artifact/$version.jar"), artifact, dependency.map{it.artifact})
+        load(File(mavenCache, "${group.replace(".", "/")}/$artifact/$version.jar"), artifact, dependency.map{it.artifact})
     }
 
     fun unloadAll(){
