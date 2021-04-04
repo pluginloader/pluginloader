@@ -18,7 +18,6 @@ import java.util.*
 lateinit var plugin: Plugin
 
 typealias Sender = CommandSender
-typealias Args = Array<String>
 
 inline fun isBukkit(): Boolean{
     return try{

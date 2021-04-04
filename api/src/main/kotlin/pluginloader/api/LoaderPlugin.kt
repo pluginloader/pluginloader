@@ -21,6 +21,8 @@ interface LoaderPlugin {
     fun <T: Annotation> fieldHandler(kClass: KClass<T>, handler: (Field, T, LoaderPlugin) -> Unit)
 
     fun <T: Annotation> methodHandler(kClass: KClass<T>, handler: (Method, T, LoaderPlugin) -> Unit)
+
+    fun cmd(command: String, cmd: (CmdSender, Args) -> Unit, vararg aliases: String)
 }
 
 inline fun <T: Annotation, Obj> LoaderPlugin.fieldReplacer(kClass: KClass<T>, obj: Obj){

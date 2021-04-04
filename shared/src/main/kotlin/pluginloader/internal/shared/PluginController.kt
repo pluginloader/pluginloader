@@ -2,10 +2,9 @@ package pluginloader.internal.shared
 
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import pluginloader.api.Load
-import pluginloader.api.LoaderPlugin
-import pluginloader.api.Unload
+import pluginloader.api.*
 import java.io.File
+import java.lang.invoke.MethodHandles
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import kotlin.reflect.KClass
@@ -28,6 +27,14 @@ class PluginController(private val loadDependency: (String) -> Unit,
             else method.invoke(null)
         }
         methodHandler(Unload::class){ method, _, pl -> pl.unloadHandler{method.invoke(null)}}
+        methodHandler(Cmd::class){method, cmd, pl ->
+            val handle = MethodHandles.lookup().unreflect(method)
+            if(method.parameterCount == 1){
+                pl.cmd(cmd.command, {sender, args -> handle.invokeWithArguments(sender)}, *cmd.aliases)
+            }else {
+                pl.cmd(cmd.command, {sender, args -> handle.invokeWithArguments(sender, args)}, *cmd.aliases)
+            }
+        }
     }
 
     fun <T: Annotation> fieldHandler(kClass: KClass<T>, handler: (Field, T, LoaderPlugin) -> Unit){

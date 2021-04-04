@@ -11,7 +11,19 @@ open class Config(private val project: Project){
     }
 
     fun lib(vararg plugins: String){
-        plugins.forEach{project.dependencies.add("compileOnly", "pluginloader:${if(!it.contains(':')) "$it:1.0.0" else it}")}
+        plugins.forEach{project.dependencies.add("compileOnly", "pluginloader:${
+            if(!it.contains(':')) {
+                "$it:1.0.0"
+            } else {
+                val split = it.split(":")
+                val ver = split[1]
+                if (ver.startsWith(".")) {
+                    "${split[0]}:1.0$ver"
+                } else {
+                    "${split[0]}:$ver"
+                }
+            }
+        }")}
     }
 }
 

@@ -9,7 +9,7 @@ repositories{
 }
 
 group = "pluginloader"
-version = "1.8.22"
+version = "1.8.23"
 
 subprojects{
     apply(plugin = "org.jetbrains.kotlin.jvm")

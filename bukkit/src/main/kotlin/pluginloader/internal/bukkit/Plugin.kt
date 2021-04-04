@@ -4,6 +4,7 @@ import org.bukkit.Bukkit
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import pluginloader.api.Args
+import pluginloader.api.CmdSender
 import pluginloader.api.Sender
 import pluginloader.api.runTask
 import pluginloader.internal.shared.InternalPlugin
@@ -40,6 +41,16 @@ internal class Plugin(controller: PluginController, name: String, val jar: File)
             }
             wrapper.unregister(Bukkit.getCommandMap())
         }
+    }
+
+    override fun cmd(command: String, cmd: (CmdSender, Args) -> Unit, vararg aliases: String) {
+        registerCommand(command, {sender, args ->
+            cmd(object: CmdSender{
+                override fun sendMessage(string: String) {
+                    sender.sendMessage(string)
+                }
+            }, args)
+        }, true, *aliases)
     }
 
     override fun task(task: () -> Unit) {

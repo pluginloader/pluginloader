@@ -10,8 +10,8 @@ private val modifiersField by lazy {
 }
 
 fun Field.unsetFinal(): Field {
-    modifiersField.setInt(this, modifiers and Modifier.FINAL.inv())
     isAccessible = true
+    if(!isAccessible) modifiersField.setInt(this, modifiers and Modifier.FINAL.inv())
     return this
 }
 
