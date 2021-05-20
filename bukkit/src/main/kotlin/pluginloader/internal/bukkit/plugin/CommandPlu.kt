@@ -1,18 +1,17 @@
-package pluginloader.internal.bukkit
+package pluginloader.internal.bukkit.plugin
 
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 
 internal class CommandPlu(private val plugin: JavaPlugin): Command("pluginloader", "", "", listOf("plu")){
     override fun execute(sender: CommandSender, commandLabel: String?, args: Array<String>): Boolean {
-        @Suppress("UNCHECKED_CAST")
         if(!sender.isOp)return true
         if(args.isEmpty()){
             sender.sendMessage("§6Usage: /pluginloader [Load|Unload|ReloadCfg|Show]")
             return true
         }
         val name = if(args.size == 1) "" else args[1]
-        when (args[0].toLowerCase()) {
+        when (args[0].lowercase()) {
             "load", "l" -> {
                 val exists = plugin.exists(name)
                 if(plugin.load(name)){

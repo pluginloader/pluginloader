@@ -4,8 +4,8 @@ plugins {
 }
 
 dependencies {
-    api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.31")
-    api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.1.0")
+    api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.0")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.2.1")
     api(gradleApi())
 }
 
@@ -30,12 +30,14 @@ publishing {
     }
 
     repositories {
-        maven {
-            url = uri(System.getenv("PLU_PUBLIC_URL"))
+        if(System.getenv("PLU_PUBLIC_URL") != null) {
+            maven {
+                url = uri(System.getenv("PLU_PUBLIC_URL"))
 
-            credentials {
-                username = System.getenv("PLU_PUBLIC_PUSH_USER")
-                password = System.getenv("PLU_PUBLIC_PUSH_PASSWORD")
+                credentials {
+                    username = System.getenv("PLU_PUBLIC_PUSH_USER")
+                    password = System.getenv("PLU_PUBLIC_PUSH_PASSWORD")
+                }
             }
         }
     }

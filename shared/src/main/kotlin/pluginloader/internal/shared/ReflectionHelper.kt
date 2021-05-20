@@ -10,9 +10,7 @@ private val modifiersField by lazy {
 }
 
 fun Field.unsetFinal(): Field {
+    if(modifiers and Modifier.FINAL != 0)modifiersField.setInt(this, modifiers and Modifier.FINAL.inv())
     isAccessible = true
-    if(!isAccessible) modifiersField.setInt(this, modifiers and Modifier.FINAL.inv())
     return this
 }
-
-fun getClass(name: String) = JarPlugin::class.java.classLoader.loadClass(name)

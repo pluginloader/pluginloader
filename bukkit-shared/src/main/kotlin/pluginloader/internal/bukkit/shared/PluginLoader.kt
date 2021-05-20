@@ -1,4 +1,4 @@
-package pluginloader.internal.bukkit
+package pluginloader.internal.bukkit.shared
 
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
@@ -8,11 +8,32 @@ import org.bukkit.event.HandlerList
 import org.bukkit.plugin.RegisteredListener
 import pluginloader.api.*
 import pluginloader.internal.shared.PluginController
+import pluginloader.internal.shared.unsetFinal
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
-import java.lang.reflect.Field
 import java.lang.reflect.Method
-import java.lang.reflect.Modifier
+
+interface BukkitPlugin: Plugin{
+    override fun cmd(command: String, cmd: (CmdSender, Args) -> Unit, vararg aliases: String) {
+        registerCommand(command, {sender, args ->
+            cmd(object: CmdSender{
+                override fun sendMessage(string: String) {
+                    sender.sendMessage(string)
+                }
+            }, args)
+        }, true, *aliases)
+    }
+
+    override fun registerCommand(name: String, callback: (Sender, Args) -> Unit, checkOp: Boolean, vararg aliases: String) {
+        registerCommand(this, name, callback, checkOp, *aliases)
+    }
+
+    override fun task(task: () -> Unit) {
+        runTask(task)
+    }
+
+    var configSave: Boolean
+}
 
 fun register(controller: PluginController){
     register({it.toConfig(config())}, V3::parse)
@@ -32,9 +53,9 @@ fun register(controller: PluginController){
     register({it}, {it})
 
     controller.fieldHandler(Config::class){ field, _, privatePlugin ->
-        privatePlugin as Plugin
-        val config = privatePlugin._config
-        unsetFinal(field)
+        privatePlugin as BukkitPlugin
+        val config = privatePlugin.config
+        field.unsetFinal()
         val name = field.name
         val type = field.type
         val obj = config[name]
@@ -60,10 +81,10 @@ fun register(controller: PluginController){
         }
     }
     controller.methodHandler(Command::class){ method, annotation, pl ->
-        pl as Plugin
+        pl as BukkitPlugin
         val reflect = method.handle
         val parameterCount = method.parameterCount
-        if(parameterCount !in 1..2) error("${method.name} in ${pl.jar.name} contains $parameterCount parameters, need 1 or 2")
+        if(parameterCount !in 1..2) error("${method.name} in ${pl.name} contains $parameterCount parameters, need 1 or 2")
         val first = method.parameterTypes[0]
         val handler: (Sender, Args) -> Unit = when{
             parameterCount == 2 && first == Player::class.java -> {sender, args ->
@@ -113,13 +134,6 @@ fun register(controller: PluginController){
 }
 
 private val Method.handle: MethodHandle get() = MethodHandles.lookup().unreflect(this)
-private val modifiersField = Field::class.java.getDeclaredField("modifiers")
-
-private fun unsetFinal(field: Field){
-    field.isAccessible = true
-    if(!modifiersField.isAccessible) modifiersField.isAccessible = true
-    modifiersField.setInt(field, field.modifiers and Modifier.FINAL.inv())
-}
 
 private inline fun <reified T: Any> register(
         noinline en: (T) -> Any,

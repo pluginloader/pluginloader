@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.4.31"
-    kotlin("plugin.serialization") version "1.4.31"
+    kotlin("jvm") version "1.5.0"
+    kotlin("plugin.serialization") version "1.5.0"
 }
 
 repositories{
@@ -9,7 +9,7 @@ repositories{
 }
 
 group = "pluginloader"
-version = "1.8.23"
+version = "1.8.24"
 
 subprojects{
     apply(plugin = "org.jetbrains.kotlin.jvm")
@@ -24,20 +24,15 @@ subprojects{
     }
 
     dependencies{
-        compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-core:1.1.0")
-        compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0")
-        testApi("org.jetbrains.kotlinx:kotlinx-serialization-core:1.1.0")
-        testApi("org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0")
+        compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-core:1.2.1")
+        compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
+        testApi("org.jetbrains.kotlinx:kotlinx-serialization-core:1.2.1")
+        testApi("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
         testApi("junit:junit:4.12")
-        testApi("org.jetbrains.kotlinx:kotlinx-serialization-core:1.1.0")
-        testApi("org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0")
-        testApi("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.1.0")
-        testApi("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.1.0")
-        testApi("com.charleskorn.kaml:kaml:0.26.0"){
-            exclude("org.jetbrains.kotlin")
-            exclude("org.jetbrains.kotlinx")
-            exclude("org.jetbrains.annotations")
-        }
+        testApi("org.jetbrains.kotlinx:kotlinx-serialization-core:1.2.1")
+        testApi("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
+        testApi("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.2.1")
+        testApi("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.2.1")
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

@@ -25,7 +25,7 @@ interface LoaderPlugin {
     fun cmd(command: String, cmd: (CmdSender, Args) -> Unit, vararg aliases: String)
 }
 
-inline fun <T: Annotation, Obj> LoaderPlugin.fieldReplacer(kClass: KClass<T>, obj: Obj){
+fun <T: Annotation, Obj> LoaderPlugin.fieldReplacer(kClass: KClass<T>, obj: Obj){
     fieldReplacer<T, Obj>(kClass){_, _, _ -> obj}
 }
 

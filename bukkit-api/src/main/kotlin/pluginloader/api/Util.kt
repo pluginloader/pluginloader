@@ -1,6 +1,5 @@
 package pluginloader.api
 
-import com.destroystokyo.paper.event.player.PlayerInitialSpawnEvent
 import kotlinx.serialization.Serializable
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -12,21 +11,15 @@ import org.bukkit.entity.Player
 import org.bukkit.event.Cancellable
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.player.PlayerEvent
+import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import java.util.*
 
 lateinit var plugin: Plugin
 
-typealias Sender = CommandSender
+inline fun ItemStack.item(): Item = Item.item(this)
 
-inline fun isBukkit(): Boolean{
-    return try{
-        Bukkit::class.java.simpleName
-        true
-    }catch (ex: NoClassDefFoundError){
-        false
-    }
-}
+typealias Sender = CommandSender
 
 val Sender.isNotOp get() = !this.isOp
 
@@ -38,11 +31,9 @@ val PlayerEvent.uuid get() = this.player.uuid
 
 fun Cancellable.cancel() { this.isCancelled = true }
 
-fun PlayerInitialSpawnEvent.spawn(location: Location) { this.spawnLocation = location }
-
 val EntityDeathEvent.killer: Player? get() = this.entity.killer
 
-inline val onlinePlayers get() = Bukkit.getOnlinePlayers()
+inline val onlinePlayers: Collection<Player> get() = Bukkit.getOnlinePlayers()
 
 @Serializable
 open class V3(open val x: Double, open val y: Double, open val z: Double){

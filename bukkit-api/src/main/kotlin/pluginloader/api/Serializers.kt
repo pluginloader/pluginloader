@@ -13,7 +13,7 @@ object EnchantmentSerializer: KSerializer<Enchantment>{
     override val descriptor: SerialDescriptor
         get() = PrimitiveSerialDescriptor("enchantment", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): Enchantment = Enchantment.getByName(decoder.decodeString().toUpperCase())
+    override fun deserialize(decoder: Decoder): Enchantment = Enchantment.getByName(decoder.decodeString().uppercase())
 
     override fun serialize(encoder: Encoder, value: Enchantment) = encoder.encodeString(value.name)
 }

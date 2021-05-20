@@ -1,13 +1,12 @@
-package pluginloader.internal.bukkit
+package pluginloader.internal.bukkit.plugin
 
-import org.bukkit.Bukkit
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.java.JavaPlugin
 import pluginloader.api.onlinePlayers
 import pluginloader.api.plugin
 import pluginloader.api.string
-import pluginloader.internal.bukkit.nms.v1_12_R1.check_1_12_R1
-import pluginloader.internal.bukkit.nms.v1_16_R2.check_1_16_R2
+import pluginloader.internal.bukkit.shared.commandMap
+import pluginloader.internal.bukkit.shared.register
 import pluginloader.internal.shared.PluginController
 import java.io.File
 import java.nio.file.Files
@@ -26,10 +25,6 @@ class JavaPlugin: JavaPlugin(){
     }
 
     override fun onEnable() {
-        when{
-            check_1_12_R1() -> {}
-            check_1_16_R2() -> {}
-        }
         plugin = this
         val time = measureTimeMillis {
             register(controller)
@@ -43,7 +38,7 @@ class JavaPlugin: JavaPlugin(){
             config.getStringList("plugins").forEach(this::loadFromRepos)
             config.save(configFile2)
 
-            Bukkit.getCommandMap().register("pluginloader", CommandPlu(this))
+            commandMap.register("pluginloader", CommandPlu(this))
         }
         println("PluginLoader loaded in ${time}ms")
     }

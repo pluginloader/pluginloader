@@ -23,7 +23,7 @@ dependencies {
 tasks {
     named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
         dependsOn("jar")
-        archiveFileName.set("${rootProject.name}-${rootProject.version}-bukkit.jar")
+        archiveFileName.set("${rootProject.name}-${rootProject.version}-bukkit-single.jar")
         relocate("de.tr7zw.changeme.nbtapi", "pluginloader.internal.nbtapi")
     }
     named("assemble"){dependsOn("shadowJar")}
@@ -33,11 +33,11 @@ tasks{
     named<Jar>("jar"){
         doFirst{
             from(configurations.runtimeClasspath.get().map{if(it.isDirectory) it else zipTree(it)})
-            project.file("build/classes/kotlin/main/plugin.yml").writeText("""main: "pluginloader.internal.bukkit.plugin.JavaPlugin"
+            project.file("build/classes/kotlin/main/plugin.yml").writeText("""main: "pluginloader.internal.bukkit.single.JavaPlugin"
 version: "${rootProject.version}"
-name: "PluginLoader"
+name: "SinglePluginLoader"
 """)
         }
-        archiveFileName.set("${rootProject.name}-${rootProject.version}-bukkit-raw.jar")
+        archiveFileName.set("${rootProject.name}-${rootProject.version}-bukkit-single-raw.jar")
     }
 }

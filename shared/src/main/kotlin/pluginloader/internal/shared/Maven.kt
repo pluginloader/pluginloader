@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.URL
 import javax.xml.stream.XMLInputFactory
+import javax.xml.stream.events.XMLEvent
 
 internal class Maven(private val url: String){
     fun getInfo(group: String, artifact: String): MavenMetadata{
@@ -34,61 +35,7 @@ internal class Maven(private val url: String){
 
     fun getArtifactInfo(group: String, artifact: String, version: String): MavenArtifactMetadata{
         val metadataRaw = URL("${urlOf(group, artifact)}/$version/$artifact-$version.pom").readText()
-        val xml = XMLInputFactory.newInstance().createXMLEventReader(ByteArrayInputStream(metadataRaw.toByteArray()))
-        val dependencies = ArrayList<MavenArtifactDependency>()
-        var dependencyCheck = false
-        var dependencyGroup: String? = null
-        var dependencyArtifact: String? = null
-        var dependencyVersion: String? = null
-        while (xml.hasNext()){
-            val tag = xml.nextTag()
-            val value = xml.next()
-            if(!tag.isStartElement)continue
-            val name = tag.asStartElement().name.localPart
-            if(name == "build")break
-            if(name == "dependencies"){
-                dependencyCheck = true
-                continue
-            }
-            if(!dependencyCheck)continue
-            when(name){
-                "dependency" -> {
-                    if(dependencyGroup != null && dependencyArtifact != null && dependencyVersion != null) {
-                        dependencies.add(MavenArtifactDependency(
-                                if (dependencyGroup == "\${project.groupId}") group else dependencyGroup,
-                                dependencyArtifact,
-                                if (dependencyVersion == "\${project.version}") version else dependencyVersion))
-                    }
-                    dependencyGroup = null
-                    dependencyArtifact = null
-                    dependencyVersion = null
-                }
-                "groupId" -> dependencyGroup = value.toString()
-                "artifactId" -> dependencyArtifact = value.toString()
-                "version" -> dependencyVersion = value.toString()
-                "scope" -> if(value.toString() != "runtime"){
-                    dependencyGroup = null
-                    dependencyArtifact = null
-                    dependencyVersion = null
-                }
-                else -> {
-                    dependencyGroup = null
-                    dependencyArtifact = null
-                    dependencyVersion = null
-                }
-            }
-        }
-        if(dependencyGroup != null && dependencyArtifact != null) {
-            if (dependencyVersion == null) {
-                dependencyVersion = getInfo(dependencyGroup, dependencyArtifact).release
-            }
-            dependencies.add(MavenArtifactDependency(
-                    if (dependencyGroup == "\${project.groupId}") group else dependencyGroup,
-                    dependencyArtifact,
-                    if (dependencyVersion == "\${project.version}") version else dependencyVersion))
-        }
-        xml.close()
-        return MavenArtifactMetadata(group, artifact, version, dependencies)
+        return parseArtifactInfo(this, group, artifact, version, metadataRaw)
     }
 
     fun getArtifact(group: String, artifact: String, version: String): ByteArray{
@@ -105,14 +52,14 @@ internal class Maven(private val url: String){
             caching {
                 if (File(dir, "${group.replace(".", "/")}/$artifact/$version.jar").exists()) return
                 val artfs = HashMap<Pair<String, String>, MavenArtifactMetadata>()
-                fun get(group: String, artifact: String, version: String, repo: Maven) {
+                fun get(group: String, artifact: String, version: String?, repo: Maven) {
                     if (group.contains("org.jetbrains")) {
                         when (artifact) {
                             "kotlinx-serialization-core-jvm", "kotlinx-serialization-json-jvm", "kotlin-stdlib-jdk8" -> return
                         }
                     }
                     if (artfs[group to artifact] != null) return
-                    val art = repo.getArtifactInfo(group, artifact, version)
+                    val art = repo.getArtifactInfo(group, artifact, version ?: repo.getInfo(group, artifact).latest)
                     artfs[group to artifact] = art
                     art.dependencies.forEach {
                         get(it.group, it.artifact, it.version, central)
@@ -131,6 +78,69 @@ internal class Maven(private val url: String){
                 }
             }.nonNull{it.printStackTrace()}
         }
+
+        fun parseArtifactInfo(repo: Maven, group: String, artifact: String, version: String, text: String): MavenArtifactMetadata{
+            val xml = XMLInputFactory.newInstance().createXMLEventReader(ByteArrayInputStream(text.toByteArray()))
+            val dependencies = ArrayList<MavenArtifactDependency>()
+            var dependencyCheck = false
+            var dependencyGroup: String? = null
+            var dependencyArtifact: String? = null
+            var dependencyVersion: String? = null
+            while (xml.hasNext()){
+                var tag: XMLEvent? = null
+                if(caching{tag = xml.nextTag()} != null)break
+
+                val value = xml.next()
+                if(!tag!!.isStartElement)continue
+                val name = tag!!.asStartElement().name.localPart
+                if(name == "build")break
+                if(name == "dependencies"){
+                    dependencyCheck = true
+                    continue
+                }
+                if(!dependencyCheck)continue
+                when(name){
+                    "dependency" -> {
+                        if(dependencyGroup != null && dependencyArtifact != null) {
+                            if (dependencyVersion == null) {
+                                dependencyVersion = repo.getInfo(dependencyGroup, dependencyArtifact).release
+                            }
+                            dependencies.add(MavenArtifactDependency(
+                                if (dependencyGroup == "\${project.groupId}") group else dependencyGroup,
+                                dependencyArtifact,
+                                if (dependencyVersion == "\${project.version}") version else dependencyVersion))
+                        }
+                        dependencyGroup = null
+                        dependencyArtifact = null
+                        dependencyVersion = null
+                    }
+                    "groupId" -> dependencyGroup = value.toString()
+                    "artifactId" -> dependencyArtifact = value.toString()
+                    "version" -> dependencyVersion = value.toString()
+                    "scope" -> if(value.toString() != "runtime"){
+                        dependencyGroup = null
+                        dependencyArtifact = null
+                        dependencyVersion = null
+                    }
+                    else -> {
+                        dependencyGroup = null
+                        dependencyArtifact = null
+                        dependencyVersion = null
+                    }
+                }
+            }
+            if(dependencyGroup != null && dependencyArtifact != null) {
+                if (dependencyVersion == null) {
+                    dependencyVersion = repo.getInfo(dependencyGroup, dependencyArtifact).release
+                }
+                dependencies.add(MavenArtifactDependency(
+                    if (dependencyGroup == "\${project.groupId}") group else dependencyGroup,
+                    dependencyArtifact,
+                    if (dependencyVersion == "\${project.version}") version else dependencyVersion))
+            }
+            xml.close()
+            return MavenArtifactMetadata(group, artifact, version, dependencies)
+        }
     }
 }
 
@@ -139,4 +149,4 @@ internal data class MavenMetadata(val group: String, val artifact: String, val l
 internal data class MavenArtifactMetadata(val group: String, val artifact: String, val version: String, val dependencies: List<MavenArtifactDependency>)
 
 @Serializable
-internal data class MavenArtifactDependency(val group: String, val artifact: String, val version: String)
+internal data class MavenArtifactDependency(val group: String, val artifact: String, val version: String?)

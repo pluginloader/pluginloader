@@ -62,8 +62,8 @@ abstract class InternalPlugin(val controller: PluginController, override val nam
     ) {
         fieldHandler(kClass) { field, annotation, plugin ->
             field.unsetFinal()
-            val result = field.get(null) as Obj
             @Suppress("UNCHECKED_CAST")
+            val result = field.get(null) as Obj
             field.set(null, handler(plugin, annotation, result))
         }
     }

@@ -56,13 +56,13 @@ internal fun main() {
                 println("Usage: pluginloader [load|unload|show|reloadcfg]")
                 return
             }
-            when (args[1].toLowerCase()) {
+            when (args[0].lowercase()) {
                 "l", "load" -> {
-                    if (args.size == 2) {
+                    if (args.size == 1) {
                         sender.sendMessage("Usage: pluginloader load [Plugin]")
                         return
                     }
-                    val name = args[2]
+                    val name = args[1]
                     if (controller.exists(name)) {
                         controller.reload(name)
                         sender.sendMessage("$name reloaded")
@@ -79,11 +79,11 @@ internal fun main() {
                     sender.sendMessage("$name loaded")
                 }
                 "u", "unload" -> {
-                    if (args.size == 2) {
+                    if (args.size == 1) {
                         sender.sendMessage("Usage: pluginloader unload [Plugin]")
                         return
                     }
-                    val name = args[2]
+                    val name = args[1]
                     var exists = config.plugins.remove(name)
                     if(exists) saveConfig()
                     exists = controller.remove(name) || exists
@@ -117,7 +117,7 @@ internal fun main() {
             if(line == "exit" || line == "stop")break
             inMain{
                 val args = line.split(" ")
-                val command = commandMapping[args[0].toLowerCase()]
+                val command = commandMapping[args[0].lowercase()]
                 if(command == null){
                     println("Unknown command")
                     return@inMain
@@ -150,8 +150,8 @@ private class Plugin(name: String): InternalPlugin(controller, name){
     }
 
     override fun cmd(command: String, cmd: (CmdSender, Args) -> Unit, vararg aliases: String) {
-        aliases.forEach{commandMapping[it.toLowerCase()] = cmd}
-        unloadHandler{aliases.forEach{commandMapping.remove(it.toLowerCase())}}
+        aliases.forEach{commandMapping[it.lowercase()] = cmd}
+        unloadHandler{aliases.forEach{commandMapping.remove(it.lowercase())}}
     }
 }
 

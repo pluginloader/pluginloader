@@ -1,23 +1,27 @@
 package pluginloader.api.bukkit
 
+import de.tr7zw.changeme.nbtapi.NBTCompound
+import de.tr7zw.changeme.nbtapi.NBTItem
+import de.tr7zw.changeme.nbtapi.NBTType
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.*
+import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
+import pluginloader.api.nonNull
 
-@Suppress("NON_PUBLIC_PRIMARY_CONSTRUCTOR_OF_INLINE_CLASS")
-inline class NBT private constructor(private val nbt: Any){
+@JvmInline
+@Serializable(NBT.Serializer::class)
+value class NBT private constructor(private val nbt: Any){
     companion object{
-        fun read(item: ItemStack) = NBT(AbstractNBT.provider.read(item))
-        fun write(item: ItemStack) = NBT(AbstractNBT.provider.write(item))
-        fun clone(item: ItemStack) = NBT(AbstractNBT.provider.clone(AbstractNBT.provider.write(item)))
-        fun new() = NBT(AbstractNBT.provider.new())
+        fun read(item: ItemStack): NBT = NBT(NBTItem(item))
+        fun write(item: ItemStack): NBT = NBT(NBTItem(item, true))
+        fun clone(item: ItemStack): NBT = NBT(NBTItem(item))
+        fun new(): NBT = NBT(NBTItem(ItemStack(Material.STONE)))
 
         fun has(item: ItemStack, key: String) = read(item).has(key)
         fun remove(item: ItemStack, key: String) = write(item).remove(key)
@@ -30,25 +34,119 @@ inline class NBT private constructor(private val nbt: Any){
         fun setInt(item: ItemStack, key: String, value: Int) = write(item).setInt(key, value)
         fun setDouble(item: ItemStack, key: String, value: Double) = write(item).setDouble(key, value)
 
-        @Deprecated("do not use this lol", level = DeprecationLevel.HIDDEN)
-        fun fromJson(json: JsonObject) = AbstractNBT.provider.fromJson(json)
-        fun fromJsonNBT(json: JsonObject): NBT = NBT(AbstractNBT.provider.fromJson(json))
+        internal fun fromJson(json: JsonObject): Any {
+            val result = NBTItem(ItemStack(Material.STONE))
+            fun decodeToNBT(compound: NBTCompound, json: JsonObject){
+                json.forEach{
+                    val key = it.key
+                    val value = it.value
+                    if(value is JsonObject){
+                        decodeToNBT(compound.getOrCreateCompound(key), value)
+                        return@forEach
+                    }
+                    if(value is JsonArray){
+                        if(value.isEmpty())return@forEach
+                        when(val first = value[0]){
+                            is JsonObject -> {
+                                val c = compound.getCompoundList(key)
+                                value.forEach{v -> decodeToNBT(c.addCompound(), v as JsonObject)}
+                            }
+                            is JsonPrimitive -> {
+                                if(first.isString){
+                                    val c = compound.getStringList(key)
+                                    value.forEach{v -> c.add((v as JsonPrimitive).content)}
+                                }else{
+                                    first.intOrNull.nonNull{
+                                        val c = compound.getIntegerList(key)
+                                        value.forEach{v -> c.add((v as JsonPrimitive).int)}
+                                        return@forEach
+                                    }
+                                    first.doubleOrNull.nonNull {
+                                        val c = compound.getDoubleList(key)
+                                        value.forEach{v -> c.add((v as JsonPrimitive).double)}
+                                        return@forEach
+                                    }
+                                }
+                            }
+                            else -> {}
+                        }
+                        return@forEach
+                    }
+                    if(value !is JsonPrimitive)return@forEach
+                    if(value.isString){
+                        compound.setString(key, value.content)
+                        return@forEach
+                    }
+                    value.intOrNull.nonNull{i ->
+                        compound.setInteger(key, i)
+                        return@forEach
+                    }
+                    value.doubleOrNull.nonNull{d ->
+                        compound.setDouble(key, d)
+                        return@forEach
+                    }
+                }
+            }
+            decodeToNBT(result, json)
+            return result
+        }
+        fun fromJsonNBT(json: JsonObject): NBT {
+            return NBT(fromJson(json))
+        }
     }
 
-    fun has(key: String) = AbstractNBT.provider.has(nbt, key)
-    fun remove(key: String) = AbstractNBT.provider.remove(nbt, key)
-    fun clone() = NBT(AbstractNBT.provider.clone(nbt))
-    fun writeTo(item: ItemStack) = AbstractNBT.provider.writeTo(nbt, item)
+    fun has(key: String): Boolean = (nbt as NBTItem).hasKey(key)
+    fun remove(key: String): Boolean {
+        val hasKey = (nbt as NBTItem).hasKey(key)
+        nbt.removeKey(key)
+        return hasKey
+    }
+    fun clone(): NBT = NBT(NBTItem((nbt as NBTItem).item))
+    fun writeTo(item: ItemStack) {
+        (nbt as NBTItem).mergeCustomNBT(item)
+    }
 
-    fun string(key: String, default: String?) = AbstractNBT.provider.string(nbt, key, default)
-    fun int(key: String, default: Int) = AbstractNBT.provider.int(nbt, key, default)
-    fun double(key: String, default: Double) = AbstractNBT.provider.double(nbt, key, default)
+    fun string(key: String, default: String?): String? = (nbt as NBTItem).getString(key) ?: default
+    fun int(key: String, default: Int): Int = if((nbt as NBTItem).hasKey(key)) nbt.getInteger(key) else default
+    fun double(key: String, default: Double): Double = if((nbt as NBTItem).hasKey(key)) nbt.getDouble(key) else default
 
-    fun setString(key: String, value: String) = AbstractNBT.provider.setString(nbt, key, value)
-    fun setInt(key: String, value: Int) = AbstractNBT.provider.setInt(nbt, key, value)
-    fun setDouble(key: String, value: Double) = AbstractNBT.provider.setDouble(nbt, key, value)
+    fun setString(key: String, value: String): Unit = (nbt as NBTItem).setString(key, value)
+    fun setInt(key: String, value: Int): Unit = (nbt as NBTItem).setInteger(key, value)
+    fun setDouble(key: String, value: Double): Unit = (nbt as NBTItem).setDouble(key, value)
 
-    fun toJson(): JsonObject = AbstractNBT.provider.toJson(nbt)
+    fun toJson(): JsonObject {
+        nbt as NBTItem
+        fun encodeToObj(nbt: NBTCompound): JsonObject{
+            val map = HashMap<String, JsonElement>()
+            fun encode(key: String): JsonElement?{
+                return when(nbt.getType(key)){
+                    NBTType.NBTTagInt -> JsonPrimitive(nbt.getInteger(key))
+                    NBTType.NBTTagDouble -> JsonPrimitive(nbt.getDouble(key))
+                    NBTType.NBTTagString -> JsonPrimitive(nbt.getString(key))
+                    NBTType.NBTTagCompound -> encodeToObj(nbt.getCompound(key))
+                    NBTType.NBTTagList -> {
+                        val list = ArrayList<JsonElement>()
+                        when(nbt.getListType(key)){
+                            NBTType.NBTTagCompound -> nbt.getCompoundList(key).forEach{list.add(encodeToObj(it))}
+                            NBTType.NBTTagDouble -> nbt.getDoubleList(key).forEach{list.add(JsonPrimitive(it))}
+                            NBTType.NBTTagFloat -> nbt.getFloatList(key).forEach{list.add(JsonPrimitive(it))}
+                            NBTType.NBTTagInt -> nbt.getIntegerList(key).forEach{list.add(JsonPrimitive(it))}
+                            NBTType.NBTTagLong -> nbt.getLongList(key).forEach{list.add(JsonPrimitive(it))}
+                            NBTType.NBTTagString -> nbt.getStringList(key).forEach{list.add(JsonPrimitive(it))}
+
+                            else -> {}
+                        }
+                        JsonArray(list)
+                    }
+
+                    else -> null
+                }
+            }
+            nbt.keys.forEach{encode(it).nonNull{obj -> map[it] = obj}}
+            return JsonObject(map)
+        }
+        return encodeToObj(nbt)
+    }
 
     override fun toString(): String {
         return toJson().toString()
@@ -95,7 +193,7 @@ inline class NBT private constructor(private val nbt: Any){
                 JsonObject.serializer().serialize(encoder, (value).toJson())
                 return
             }
-            encoder.encodeString(Json.encodeToString(JsonObject.serializer(), AbstractNBT.provider.toJson(value.nbt)))
+            encoder.encodeString(Json.encodeToString(JsonObject.serializer(), value.toJson()))
         }
     }
 }

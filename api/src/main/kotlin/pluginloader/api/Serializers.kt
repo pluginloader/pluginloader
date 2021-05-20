@@ -1,6 +1,7 @@
 package pluginloader.api
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -35,7 +36,6 @@ object UUIDSerializer: KSerializer<UUID> {
         }
 }
 
-/*
 object UUIDStringSerializer: KSerializer<UUID> {
     override val descriptor: SerialDescriptor = String.serializer().descriptor
 
@@ -43,4 +43,3 @@ object UUIDStringSerializer: KSerializer<UUID> {
 
     override fun serialize(encoder: Encoder, value: UUID) = encoder.encodeString(value.toString())
 }
-*/

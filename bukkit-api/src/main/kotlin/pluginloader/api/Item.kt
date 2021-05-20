@@ -1,5 +1,6 @@
 package pluginloader.api
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.bukkit.Material
@@ -12,8 +13,6 @@ import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.inventory.meta.SpawnEggMeta
 import pluginloader.api.bukkit.NBT
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 @Serializable
 class Item: Cloneable{
@@ -25,9 +24,8 @@ class Item: Cloneable{
     var name: String = ""
     val lore: ArrayList<String> = ArrayList(3)
     val enchantment: MutableMap<@Serializable(EnchantmentSerializer::class) Enchantment, Int> = HashMap(3)
-    @Serializable(NBT.Serializer::class)
-    private var data: Any = NBT.new()
-    var nbt: NBT set(value) = kotlin.run { this.data = value }; get() = this.data as NBT
+    @SerialName("data")
+    var nbt: NBT = NBT.new()
     var unbreakable: Boolean = false
     var flags: MutableSet<ItemFlag> = EnumSet.noneOf(ItemFlag::class.java)
 
@@ -46,6 +44,10 @@ class Item: Cloneable{
         return item
     }
 
+    inline fun replaceLore(noinline replace: (String) -> String){
+        lore.replaceAll(replace)
+    }
+
     companion object{
         fun item(stack: ItemStack): Item{
             val item = Item()
@@ -59,13 +61,14 @@ class Item: Cloneable{
                 if(meta.hasEnchants())item.enchantment.putAll(meta.enchants)
                 item.flags.addAll(meta.itemFlags)
                 item.unbreakable = meta.isUnbreakable
-                item.data = NBT.clone(stack)
+                item.nbt = NBT.clone(stack)
             }
             return item
         }
 
         fun default() = Item().type(Material.STONE)
 
+        @Deprecated("don't use :/")
         fun parse(section: ConfigurationSection, log: (String) -> Unit = System.out::println): Item{
             val item = default()
             val currentPath = section.currentPath
@@ -73,7 +76,7 @@ class Item: Cloneable{
             val type = section.getString("item")
             if(type != null) {
                 item.type = try {
-                    Material.valueOf(type.toUpperCase())
+                    Material.valueOf(type.uppercase())
                 } catch (ex: java.lang.IllegalArgumentException) {
                     log("Сложна-а-а, я хз что такое '$type', нет такого предмета в словарике, чекни чо ты написал в '$currentPath'")
                     Material.CAKE
@@ -95,7 +98,7 @@ class Item: Cloneable{
             val mobType = section.getString("mob")
             if(mobType != null) {
                 val parse = try {
-                    EntityType.valueOf(type.toUpperCase())
+                    EntityType.valueOf(type.uppercase())
                 } catch (ex: java.lang.IllegalArgumentException) {
                     println("кто такой '$mobType' в предмете '$currentPath', я ево не знаю, он летучая мыш?")
                     EntityType.BAT
@@ -106,7 +109,7 @@ class Item: Cloneable{
             val color = section.getString("color")
             if(color != null){
                 try {
-                    item.color(Color.valueOf(color.toUpperCase()))
+                    item.color(Color.valueOf(color.uppercase()))
                 } catch (ex: IllegalArgumentException) {
                     log("В душе ниибу шо за цвет $color")
                 }
@@ -119,7 +122,7 @@ class Item: Cloneable{
                 itemFlags.forEach{flag ->
                     try {
                         if (flag == "*") item.flags(*ItemFlag.values())
-                        else item.flag(ItemFlag.valueOf(flag.toUpperCase()))
+                        else item.flag(ItemFlag.valueOf(flag.uppercase()))
                     } catch (ex: IllegalArgumentException) {
                         log("Флаг $flag это какая-то фигня, убери его из '$currentPath'")
                     }
@@ -262,7 +265,7 @@ class Item: Cloneable{
         result = 31 * result + name.hashCode()
         result = 31 * result + lore.hashCode()
         result = 31 * result + enchantment.hashCode()
-        result = 31 * result + this.data.hashCode()
+        result = 31 * result + nbt.hashCode()
         result = 31 * result + unbreakable.hashCode()
         result = 31 * result + flags.hashCode()
         return result

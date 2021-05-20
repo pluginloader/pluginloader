@@ -2,7 +2,10 @@ package pluginloader.internal.shared
 
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import pluginloader.api.*
+import pluginloader.api.Cmd
+import pluginloader.api.Load
+import pluginloader.api.LoaderPlugin
+import pluginloader.api.Unload
 import java.io.File
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Field
@@ -30,7 +33,7 @@ class PluginController(private val loadDependency: (String) -> Unit,
         methodHandler(Cmd::class){method, cmd, pl ->
             val handle = MethodHandles.lookup().unreflect(method)
             if(method.parameterCount == 1){
-                pl.cmd(cmd.command, {sender, args -> handle.invokeWithArguments(sender)}, *cmd.aliases)
+                pl.cmd(cmd.command, {sender, _ -> handle.invokeWithArguments(sender)}, *cmd.aliases)
             }else {
                 pl.cmd(cmd.command, {sender, args -> handle.invokeWithArguments(sender, args)}, *cmd.aliases)
             }
@@ -99,7 +102,7 @@ class PluginController(private val loadDependency: (String) -> Unit,
         val depFile = File(mavenCache, "${group.replace(".", "/")}/$artifact/$version-dependency.json")
         if(!depFile.exists())return
         val dependency = Json.decodeFromString(ListSerializer(MavenArtifactDependency.serializer()), depFile.readText())
-        dependency.forEach{loadMaven(it.group, it.artifact, it.version)}
+        dependency.forEach{loadMaven(it.group, it.artifact, it.version!!)}
         load(File(mavenCache, "${group.replace(".", "/")}/$artifact/$version.jar"), artifact, dependency.map{it.artifact})
     }
 
