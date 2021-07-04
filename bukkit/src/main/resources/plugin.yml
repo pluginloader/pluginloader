@@ -1,0 +1,3 @@
+main: "pluginloader.internal.bukkit.plugin.Loader"
+version: "testing"
+name: "PluginLoader"

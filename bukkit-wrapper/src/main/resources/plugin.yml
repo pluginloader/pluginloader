@@ -1,0 +1,5 @@
+main: "pluginloader.internal.bukkit.wrapper.Plugin"
+version: "1.0.0"
+name: "PluginLoader"
+commands:
+  plu_update:

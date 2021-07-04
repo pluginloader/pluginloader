@@ -12,8 +12,7 @@ repositories {
 dependencies {
     api(project(":shared"))
     api(project(":bukkit-api"))
-    api(project(":bukkit-shared"))
-    api("de.tr7zw:item-nbt-api:2.7.1")
+    api("de.tr7zw:item-nbt-api:2.8.0")
     compileOnly("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT")
 
     //testApi(files("../../libs/patched_1.12.2.jar", "../../libs/spigot_1.16.3.jar"))
@@ -31,13 +30,6 @@ tasks {
 
 tasks{
     named<Jar>("jar"){
-        doFirst{
-            from(configurations.runtimeClasspath.get().map{if(it.isDirectory) it else zipTree(it)})
-            project.file("build/classes/kotlin/main/plugin.yml").writeText("""main: "pluginloader.internal.bukkit.plugin.JavaPlugin"
-version: "${rootProject.version}"
-name: "PluginLoader"
-""")
-        }
         archiveFileName.set("${rootProject.name}-${rootProject.version}-bukkit-raw.jar")
     }
 }

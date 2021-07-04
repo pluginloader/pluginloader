@@ -2,6 +2,11 @@ plugins{
     id("maven-publish")
 }
 
+java{
+    withSourcesJar()
+    withJavadocJar()
+}
+
 repositories {
     maven{url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")}
     maven{url = uri("https://repo.codemc.org/repository/maven-public/")}
@@ -9,7 +14,7 @@ repositories {
 
 dependencies {
     api(project(":api"))
-    compileOnly("de.tr7zw:item-nbt-api:2.7.1")
+    compileOnly("de.tr7zw:item-nbt-api:2.8.0")
     compileOnly("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT")
 }
 

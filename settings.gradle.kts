@@ -8,4 +8,4 @@ pluginManagement {
 }
 
 rootProject.name = "pluginloader"
-include("api", "bukkit-api", "shared", "bukkit-shared", "bukkit", "bukkit-single", "standalone", "plugin")
+include("api", "bukkit-api", "shared", "bukkit", "bukkit-wrapper", "standalone")
